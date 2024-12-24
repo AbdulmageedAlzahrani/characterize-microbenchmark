@@ -24,4 +24,18 @@ typedef struct {
   int    nthreads;
 } args_t;
 
+//create a structure to hold the arguments, so that we can pass them to the threads
+typedef struct {
+  
+
+  float sptPrice  ;
+  float strike    ;
+  float rate      ;
+  float volatility;
+  float otime     ;
+  int  otype      ;
+  float *output   ;
+
+} single_args_t;
+
 #endif //__INCLUDE_TYPES_H_
