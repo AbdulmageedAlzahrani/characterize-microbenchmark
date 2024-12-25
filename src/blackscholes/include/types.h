@@ -28,13 +28,15 @@ typedef struct {
 typedef struct {
   
 
-  float sptPrice  ;
-  float strike    ;
-  float rate      ;
-  float volatility;
-  float otime     ;
-  int  otype      ;
-  float *output   ;
+  float* sptPrice  ;
+  float* strike    ;
+  float* rate      ;
+  float* volatility;
+  float* otime     ;
+  char*  otype     ;
+  float *output    ;
+  int start_index  ;
+  int end_index    ;
 
 } single_args_t;
 
