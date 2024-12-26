@@ -10,6 +10,17 @@
 #define __INCLUDE_TYPES_H_
 
 typedef struct {
+    const float* src0; // A
+    const float* src1; // B
+    float* dest; // C
+    int rowsA;   // total number of rows in A
+    int colsA;   // total number of cols in A (also rows in B)
+    int colsB;   // total number of cols in B (also in C)
+    int startRow;
+    int endRow;
+} ThreadData;
+
+typedef struct {
   byte*   input1;
   byte*   input2;
   byte*   output;
