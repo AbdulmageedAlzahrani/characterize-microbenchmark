@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
+
 /* Include common headers */
 #include "common/macros.h"
 #include "common/types.h"
@@ -19,7 +21,7 @@
 #include "include/types.h"
 #define inv_sqrt_2xPI 0.39894228040143270286
 
-float CNDF(float InputX)
+float CNDF_s(float InputX)
 {
   int sign;
 
@@ -80,7 +82,7 @@ float CNDF(float InputX)
   return OutputX;
 }
 
-float blackScholes(float sptprice, float strike, float rate, float volatility,
+float blackScholes_s(float sptprice, float strike, float rate, float volatility,
                    float otime, char otype)
 {
   float OptionPrice;
@@ -133,8 +135,8 @@ float blackScholes(float sptprice, float strike, float rate, float volatility,
   d1 = xD1;
   d2 = xD2;
 
-  NofXd1 = CNDF(d1);
-  NofXd2 = CNDF(d2);
+  NofXd1 = CNDF_s(d1);
+  NofXd2 = CNDF_s(d2);
 
   FutureValueX = strike * (exp(-(rate) * (otime)));
   otype = (tolower(otype) == 'p')? 1 : 0;
@@ -161,7 +163,7 @@ void *impl_scalar(void *args)
 
   for (int i = 0; i < num_stocks; i++)
   {
-    inputs->output[i] = blackScholes(inputs->sptPrice[i], inputs->strike[i], inputs->rate[i],
+    inputs->output[i] = blackScholes_s(inputs->sptPrice[i], inputs->strike[i], inputs->rate[i],
                                      inputs->volatility[i], inputs->otime[i], inputs->otype[i]);
   }
 
