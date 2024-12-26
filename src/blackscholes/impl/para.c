@@ -202,7 +202,9 @@ void *impl_parallel(void *args)
   int nthreads = inputs->nthreads;
   int num_stocks = inputs->num_stocks;
 
-  pthread_t threads[nthreads];
+  // allocate threads
+
+  pthread_t *threads = (pthread_t *)malloc(nthreads * sizeof(pthread_t));
 
   int chunk_size = num_stocks / nthreads;
   int remainder = num_stocks % nthreads;
@@ -215,7 +217,7 @@ void *impl_parallel(void *args)
       chunk_size = num_stocks - i;
     }
     single_args_t *thread_args = prepare_args(inputs, i, i + chunk_size);
-    pthread_create(&threads[i], NULL, blackScholes_parallel, (void *)thread_args);
+    pthread_create(&threads[i%8], NULL, blackScholes_parallel, (void *)thread_args);
   }
 
   for (int i = 0; i < nthreads; i++)
