@@ -45,7 +45,7 @@ float CNDF(float InputX)
     InputX = -InputX;
     sign = 1;
   }
-  elsenthreads
+  else
     sign = 0;
 
   xInput = InputX;
@@ -86,7 +86,7 @@ float CNDF(float InputX)
   return OutputX;
 }
 
-float blackScholes(single_args_t *args)
+void blackScholes(single_args_t* args, int index)
 {
   float OptionPrice;
 
@@ -113,13 +113,13 @@ float blackScholes(single_args_t *args)
   float NegNofXd1;
   float NegNofXd2;
 
-  xStockPrice = args->sptPrice;
-  xStrikePrice = args->strike;
-  xRiskFreeRate = args->rate;
-  xVolatility = args->volatility;
-  otype = args->otype;
+  xStockPrice = args->sptPrice[index];
+  xStrikePrice = args->strike[index];
+  xRiskFreeRate = args->rate[index];
+  xVolatility = args->volatility[index];
+  otype = (tolower(args->otype[index]) == 'p')? 1 : 0;
 
-  xTime = args->otime;
+  xTime = args->otime[index];
   xSqrtTime = sqrt(xTime);
 
   logValues = log(xStockPrice / xStrikePrice);
@@ -154,29 +154,45 @@ float blackScholes(single_args_t *args)
     NegNofXd2 = (1.0 - NofXd2);
     OptionPrice = (FutureValueX * NegNofXd2) - (xStockPrice * NegNofXd1);
   }
+  args->output[index] = OptionPrice;
 
-  return OptionPrice;
+ 
 }
 
 // prepare the arguments for the parallel implementation based on the input arguments and index
-single_args_t *prepare_args(args_t *args, int index)
+single_args_t *prepare_args(args_t *args, int start_index, int end_index)
 {
-  single_args_t *inputs = (single_args_t *)malloc(sizeof(args_t));
+  single_args_t *inputs = (single_args_t *)malloc(sizeof(single_args_t));
   if (inputs == NULL)
   {
     printf("Error: Cannot allocate memory for the arguments\n");
     exit(-2);
   }
-  inputs->sptPrice = args->sptPrice[index];
-  inputs->strike = args->strike[index];
-  inputs->rate = args->rate[index];
-  inputs->volatility = args->volatility[index];
-  inputs->otime =  args->otime[index];
-  inputs->otype = (tolower(args->otype[index]) == 'p')? 1 : 0;
-  inputs->output = &args->output[index];
+  inputs->sptPrice = args->sptPrice;
+  inputs->strike = args->strike;
+  inputs->rate = args->rate;
+  inputs->volatility = args->volatility;
+  inputs->otime =  args->otime;
+  inputs->otype = args->otype;//(tolower(args->otype[index]) == 'p')? 1 : 0;
+  inputs->output = args->output;
+  inputs->start_index = start_index;
+  inputs->end_index = end_index;
 
   return inputs;
 }
+
+
+void blackScholes_parallel(single_args_t *args)
+{
+  int start_index = args->start_index;
+  int end_index = args->end_index;
+  for (int i = start_index; i < end_index; i++)
+  {
+    blackScholes(args,i);
+  }
+}
+
+
 
 void *impl_parallel(void *args)
 {
@@ -186,15 +202,23 @@ void *impl_parallel(void *args)
   int nthreads = inputs->nthreads;
   int num_stocks = inputs->num_stocks;
 
-  pthread_t threads[num_stocks];
+  pthread_t threads[nthreads];
 
-  for (int i = 0; i < num_stocks; i++)
+  int chunk_size = num_stocks / nthreads;
+  int remainder = num_stocks % nthreads;
+
+
+
+  for (int i = 0; i < num_stocks; i += chunk_size)
   {
-    single_args_t *thread_args = prepare_args(inputs, i);
-    pthread_create(&threads[i], NULL, blackScholes, (void *)thread_args);
+    if(chunk_size > num_stocks - i){
+      chunk_size = num_stocks - i;
+    }
+    single_args_t *thread_args = prepare_args(inputs, i, i + chunk_size);
+    pthread_create(&threads[i], NULL, blackScholes_parallel, (void *)thread_args);
   }
 
-  for (int i = 0; i < num_stocks; i++)
+  for (int i = 0; i < nthreads; i++)
   {
     pthread_join(threads[i], NULL);
   }
