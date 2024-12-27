@@ -202,6 +202,11 @@ void *impl_parallel(void *args)
 
   pthread_t *threads = (pthread_t *)malloc(nthreads * sizeof(pthread_t));
 
+  if(nthreads > num_stocks)
+  {
+    nthreads = num_stocks;
+  }
+
  
   int chunk_size =  (num_stocks + nthreads - 1) / nthreads;
 
