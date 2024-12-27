@@ -32,6 +32,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <iostream>
+
+
+#include <fstream>
+#include <sstream>
 /*  -> Scheduling       */
 #include <sched.h>
 /*  -> Types            */
@@ -70,6 +75,56 @@ void initialize_matrix(float* matrix,int rows, int cols) {
         }
     }
 }
+static void load_matrix_from_csv(const char *filename,
+  float *dest,
+  int rows, int cols)
+{
+  
+FILE* fp = fopen(filename, "r");
+
+// print fp value
+printf("fp: %p\n", fp);
+if (!fp) {
+fprintf(stderr, "Error: cannot open file %s\n", filename);
+return;
+}
+
+// We expect each row in the CSV file to have `cols` float values
+// separated by commas, e.g.:
+// 0.1234,0.5678,...,0.9999
+for (int r = 0; r < rows; r++) {
+for (int c = 0; c < cols; c++) {
+// Read a float followed by a comma (except maybe the last in line)
+if (fscanf(fp, "%f%*c", &dest[r * cols + c]) != 1) {
+fprintf(stderr, "Error reading float from %s at row %d col %d\n",
+filename, r, c);
+fclose(fp);
+return;
+}
+}
+}
+
+fclose(fp);
+}
+void fillMatrices(byte *src1, 
+  byte *src2, 
+  byte *ref,
+  int rows1, int cols1,
+  int rows2, int cols2,
+  int rowsC, int colsC)
+{
+// Cast the byte* pointers to float* to store float data.
+float *fA = (float*)src1;
+float *fB = (float*)src2;
+float *fC = (float*)ref;
+
+// Load A, B, C from CSV files created by Julia
+load_matrix_from_csv("src/mmult/test_data/A.csv", fA, rows1, cols1);
+load_matrix_from_csv("src/mmult/test_data/B.csv", fB, rows2, cols2);
+load_matrix_from_csv("src/mmult/test_data/C.csv", fC, rowsC, colsC);
+}
+
+
 
 int main(int argc, char** argv)
 {
@@ -100,7 +155,7 @@ int main(int argc, char** argv)
   /* Chosen */
   void* (*impl)(void* args) = NULL;
   const char* impl_str      = NULL;
-
+  bool run_test = false;
 
 
   bool help = false;
@@ -187,6 +242,13 @@ int main(int argc, char** argv)
 
       continue;
     }
+
+    if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--test") == 0) {
+      run_test = true;
+
+      continue;
+    }
+    
   }
 
   if (help || impl == NULL) {
@@ -216,6 +278,7 @@ int main(int argc, char** argv)
     printf("    -l2 | --cols      Number of columns in second input matrix (default = %d)\n", cols2);
     printf("         --nruns     Number of runs to the implementation (default = %d)\n", nruns);
     printf("         --stdevs    Number of standard deviation to exclude outliers (default = %d)\n", nstdevs);
+    printf("     -t | --test"    "run the pre-calculated test matrices\n");
     printf("\n");
 
     exit(help? 0 : 1);
@@ -290,21 +353,31 @@ int main(int argc, char** argv)
   /* Datasets */
   /* Allocation and initialization */
 
-  // print rows and cols
-  printf("Rows1: %d\n", rows1);
-  printf("Cols1: %d\n", cols1);
-  printf("Rows2: %d\n", rows2);
-  printf("Cols2: %d\n", cols2);
-
   byte* src1   = __ALLOC_DATA     (byte, sizeof(float)*rows1*cols1);
   initialize_matrix((float*)src1,rows1,cols1); 
   byte* src2   = __ALLOC_DATA     (byte, sizeof(float)*rows2*cols2);
   initialize_matrix((float*)src2,rows2,cols2); 
   byte* ref   = __ALLOC_DATA     (byte, sizeof(float)*(rows1*cols2 + 1));
   byte* dest  = __ALLOC_DATA     (byte, sizeof(float)*(rows1*cols2 + 1));
+  
+  
+  if (run_test) {
+    printf("Running test matrices\n");
+    rows1 = 5;
+    cols1 = 5;
+    rows2 = 5;
+    cols2 = 7;
 
+    fillMatrices(
+      src1, src2, ref, 
+      rows1, cols1, rows2, cols2, rows1, cols2);
+  }
 
-
+  // print rows and cols
+  printf("Rows1: %d\n", rows1);
+  printf("Cols1: %d\n", cols1);
+  printf("Rows2: %d\n", rows2);
+  printf("Cols2: %d\n", cols2);
 
   /* Setting a guards, which is 0xdeadcafe.
      The guard should not change or be touched. */
@@ -335,7 +408,7 @@ int main(int argc, char** argv)
 
 
   /* Running the reference function */
-
+  if (!run_test)
   impl_ref(&args_ref);
 
 
@@ -375,7 +448,7 @@ int main(int argc, char** argv)
 
   /* Verfication */
   printf("  * Verifying results .... ");
-  bool match = __CHECK_MATCH(ref, dest, sizeof(float)*rows1*cols2-1);
+  bool match = __CHECK_FLOAT_MATCH(ref, dest, rows1*cols2-1, 0.1);
   bool guard = __CHECK_GUARD(     dest, sizeof(float)*rows1*cols2);
 
     // print src

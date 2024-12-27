@@ -2,3 +2,4 @@ build/
 
 # CSV files
 *.csv
+!src/mmult/test_data/*.csv
