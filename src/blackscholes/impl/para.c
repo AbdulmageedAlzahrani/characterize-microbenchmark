@@ -86,7 +86,7 @@ float CNDF(float InputX)
   return OutputX;
 }
 
-void blackScholes(single_args_t* args, int index)
+void blackScholes(single_args_t *args, int index)
 {
   float OptionPrice;
 
@@ -117,7 +117,7 @@ void blackScholes(single_args_t* args, int index)
   xStrikePrice = args->strike[index];
   xRiskFreeRate = args->rate[index];
   xVolatility = args->volatility[index];
-  otype = (tolower(args->otype[index]) == 'p')? 1 : 0;
+  otype = (tolower(args->otype[index]) == 'p') ? 1 : 0;
 
   xTime = args->otime[index];
   xSqrtTime = sqrt(xTime);
@@ -155,8 +155,6 @@ void blackScholes(single_args_t* args, int index)
     OptionPrice = (FutureValueX * NegNofXd2) - (xStockPrice * NegNofXd1);
   }
   args->output[index] = OptionPrice;
-
- 
 }
 
 // prepare the arguments for the parallel implementation based on the input arguments and index
@@ -172,8 +170,8 @@ single_args_t *prepare_args(args_t *args, int start_index, int end_index)
   inputs->strike = args->strike;
   inputs->rate = args->rate;
   inputs->volatility = args->volatility;
-  inputs->otime =  args->otime;
-  inputs->otype = args->otype;//(tolower(args->otype[index]) == 'p')? 1 : 0;
+  inputs->otime = args->otime;
+  inputs->otype = args->otype; //(tolower(args->otype[index]) == 'p')? 1 : 0;
   inputs->output = args->output;
   inputs->start_index = start_index;
   inputs->end_index = end_index;
@@ -181,18 +179,16 @@ single_args_t *prepare_args(args_t *args, int start_index, int end_index)
   return inputs;
 }
 
-
 void blackScholes_parallel(single_args_t *args)
 {
   int start_index = args->start_index;
   int end_index = args->end_index;
   for (int i = start_index; i < end_index; i++)
   {
-    blackScholes(args,i);
+    // printf("index: %d\n", i);
+    blackScholes(args, i);
   }
 }
-
-
 
 void *impl_parallel(void *args)
 {
@@ -206,18 +202,24 @@ void *impl_parallel(void *args)
 
   pthread_t *threads = (pthread_t *)malloc(nthreads * sizeof(pthread_t));
 
-  int chunk_size = num_stocks / nthreads;
-  int remainder = num_stocks % nthreads;
+ 
+  int chunk_size =  (num_stocks + nthreads - 1) / nthreads;
 
+  // int remainder = num_stocks % nthreads;
 
-
-  for (int i = 0; i < num_stocks; i += chunk_size)
+  for (int i = 0; i < nthreads; i++)
   {
-    if(chunk_size > num_stocks - i){
-      chunk_size = num_stocks - i;
+    // printf("thread: %d\n", i);
+    int start_index = i * chunk_size;
+    int end_index = (i + 1) * chunk_size;
+
+    if (end_index > num_stocks)
+    {
+      end_index = num_stocks;
     }
-    single_args_t *thread_args = prepare_args(inputs, i, i + chunk_size);
-    pthread_create(&threads[i%8], NULL, blackScholes_parallel, (void *)thread_args);
+    // printf("start: %d, end: %d\n", start_index, end_index);
+    single_args_t *thread_args = prepare_args(inputs, start_index, end_index);
+    pthread_create(&threads[i], NULL, blackScholes_parallel, (void *)thread_args);
   }
 
   for (int i = 0; i < nthreads; i++)
