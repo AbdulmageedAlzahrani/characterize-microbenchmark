@@ -38,15 +38,15 @@ void *impl_scalar_naive(void *args)
   int rows2 = parsed_args->rows2;
   int cols2 = parsed_args->cols2;
 
-  for(int i = 0; i < rows1; i++) {
-    for(int j = 0; j < cols2; j++) {
-      float temp = 0.0f;
-      for(int k = 0; k < cols2; k++) {
-        temp += src0[i * cols2 + k] * src1[k * cols2 + j];
-      }
-      dest[i * cols2 + j] = temp;
+  for (int i = 0; i < rows1; i++) {
+    for (int j = 0; j < cols2; j++) {
+        float temp = 0.0f;
+        for (int k = 0; k < cols1; k++) {
+            temp += src0[i * cols1 + k] * src1[k * cols2 + j];
+        }
+        dest[i * cols2 + j] = temp;
     }
-  }
+}
   return NULL;
 }
 // #pragma GCC pop_options
