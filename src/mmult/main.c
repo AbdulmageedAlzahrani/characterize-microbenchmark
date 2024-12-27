@@ -32,11 +32,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <iostream>
 
-
-#include <fstream>
-#include <sstream>
 /*  -> Scheduling       */
 #include <sched.h>
 /*  -> Types            */
@@ -82,8 +78,6 @@ static void load_matrix_from_csv(const char *filename,
   
 FILE* fp = fopen(filename, "r");
 
-// print fp value
-printf("fp: %p\n", fp);
 if (!fp) {
 fprintf(stderr, "Error: cannot open file %s\n", filename);
 return;
@@ -453,46 +447,46 @@ int main(int argc, char** argv)
 
     // print src
   
-  // FILE * fp_dump;
-  // fp_dump = fopen("result.txt", "w");
+  FILE * fp_dump;
+  fp_dump = fopen("result.txt", "w");
 
-  // if (fp_dump != NULL) {
-  //    fprintf(fp_dump,"Src1:\n");
-  // for (int i = 0; i < rows1; i++) {
-  //   for (int j = 0; j < cols1; j++) {
-  //     fprintf(fp_dump,"%f ", ((float*)src1)[i * cols1 + j]);
-  //   }
-  //   fprintf(fp_dump,"\n");
-  // }
-  // fprintf(fp_dump,"Src2:\n");
-  // for (int i = 0; i < rows2; i++) {
-  //   for (int j = 0; j < cols2; j++) {
-  //     fprintf(fp_dump,"%f ", ((float*)src2)[i * cols2 + j]);
-  //   }
-  //   fprintf(fp_dump,"\n");
-  // }
+  if (fp_dump != NULL) {
+     fprintf(fp_dump,"Src1:\n");
+  for (int i = 0; i < rows1; i++) {
+    for (int j = 0; j < cols1; j++) {
+      fprintf(fp_dump,"%f ", ((float*)src1)[i * cols1 + j]);
+    }
+    fprintf(fp_dump,"\n");
+  }
+  fprintf(fp_dump,"Src2:\n");
+  for (int i = 0; i < rows2; i++) {
+    for (int j = 0; j < cols2; j++) {
+      fprintf(fp_dump,"%f ", ((float*)src2)[i * cols2 + j]);
+    }
+    fprintf(fp_dump,"\n");
+  }
 
-  // //print ref and dest
-  // fprintf(fp_dump,"Ref:\n");
-  // for (int i = 0; i < rows1; i++) {
-  //   for (int j = 0; j < cols2; j++) {
-  //     fprintf(fp_dump,"%f ", ((float*)ref)[i * cols2 + j]);
-  //   }
-  //   fprintf(fp_dump,"\n");
-  // }
-  // fprintf(fp_dump,"Dest:\n");
-  // for (int i = 0; i < rows1; i++) {
-  //   for (int j = 0; j < cols2; j++) {
-  //     fprintf(fp_dump,"%f ", ((float*)dest)[i * cols2 + j]);
-  //   }
-  //   fprintf(fp_dump,"\n");
-  // }
+  //print ref and dest
+  fprintf(fp_dump,"Ref:\n");
+  for (int i = 0; i < rows1; i++) {
+    for (int j = 0; j < cols2; j++) {
+      fprintf(fp_dump,"%f ", ((float*)ref)[i * cols2 + j]);
+    }
+    fprintf(fp_dump,"\n");
+  }
+  fprintf(fp_dump,"Dest:\n");
+  for (int i = 0; i < rows1; i++) {
+    for (int j = 0; j < cols2; j++) {
+      fprintf(fp_dump,"%f ", ((float*)dest)[i * cols2 + j]);
+    }
+    fprintf(fp_dump,"\n");
+  }
 
   
 
-  //   fclose(fp_dump);
+    fclose(fp_dump);
 
-  // } 
+  } 
 
 
 
